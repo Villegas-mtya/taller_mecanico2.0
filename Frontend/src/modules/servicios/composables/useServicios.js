@@ -17,9 +17,7 @@ export function useServicios() {
   const getInitialForm = () => ({
     id: null,
     nombre: "",
-    descripcion: "",
-    precio_base: 0,
-    duracion_estimada_min: "",
+    precio: 0,
     activo: 1,
   });
 
@@ -52,11 +50,7 @@ export function useServicios() {
     try {
       const payload = {
         ...form.value,
-        precio_base: Number(form.value.precio_base || 0),
-        duracion_estimada_min:
-          form.value.duracion_estimada_min === ""
-            ? null
-            : Number(form.value.duracion_estimada_min),
+        precio: Number(form.value.precio || 0),
         activo: Number(form.value.activo ? 1 : 0),
       };
 
@@ -79,10 +73,7 @@ export function useServicios() {
     form.value = {
       id: servicio.id,
       nombre: servicio.nombre || "",
-      descripcion: servicio.descripcion || "",
-      precio_base: Number(servicio.precio_base || 0),
-      duracion_estimada_min:
-        servicio.duracion_estimada_min ?? servicio.duracionestimadamin ?? "",
+      precio: Number(servicio.precio || 0),
       activo: Number(servicio.activo ?? 1),
     };
 
@@ -105,10 +96,7 @@ export function useServicios() {
     const texto = busqueda.value.toLowerCase().trim();
     if (!texto) return servicios.value;
 
-    return servicios.value.filter((s) =>
-      String(s.nombre || "").toLowerCase().includes(texto) ||
-      String(s.descripcion || "").toLowerCase().includes(texto)
-    );
+    return servicios.value.filter((s) => String(s.nombre || "").toLowerCase().includes(texto));
   });
 
   return {

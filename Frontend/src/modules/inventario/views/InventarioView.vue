@@ -58,7 +58,7 @@ onMounted(fetchInventario);
               v-model="busqueda"
               type="text"
               class="search-input"
-              placeholder="Buscar por código, nombre, categoría o ubicación"
+              placeholder="Buscar por nombre o descripción"
             />
           </div>
         </div>

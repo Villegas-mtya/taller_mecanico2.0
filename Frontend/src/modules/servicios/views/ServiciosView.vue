@@ -58,7 +58,7 @@ onMounted(fetchServicios);
               v-model="busqueda"
               type="text"
               class="search-input"
-              placeholder="Buscar por nombre o descripción"
+              placeholder="Buscar por nombre"
             />
           </div>
         </div>

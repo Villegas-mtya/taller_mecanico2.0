@@ -26,7 +26,7 @@ const formatMoney = (value) => {
     <div class="section-head">
       <div>
         <h2>Listado de inventario</h2>
-        <p>Consulta stock, costos y precios de venta por item.</p>
+        <p>Consulta stock y costo por item.</p>
       </div>
 
       <span class="results-badge">
@@ -52,14 +52,10 @@ const formatMoney = (value) => {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Código</th>
             <th>Nombre</th>
-            <th>Categoría</th>
+            <th>Descripción</th>
             <th>Stock</th>
-            <th>Mínimo</th>
             <th>Costo</th>
-            <th>Precio</th>
-            <th>Ubicación</th>
             <th>Estado</th>
             <th class="th-actions">Acciones</th>
           </tr>
@@ -68,14 +64,10 @@ const formatMoney = (value) => {
         <tbody>
           <tr v-for="item in items" :key="item.id">
             <td class="id-cell">{{ item.id }}</td>
-            <td>{{ item.codigo || "-" }}</td>
             <td>{{ item.nombre || "-" }}</td>
-            <td>{{ item.categoria || "-" }}</td>
-            <td>{{ Number(item.stock_actual || 0) }}</td>
-            <td>{{ Number(item.stock_minimo || 0) }}</td>
-            <td>{{ formatMoney(item.costo_unitario) }}</td>
-            <td>{{ formatMoney(item.precio_venta) }}</td>
-            <td>{{ item.ubicacion || "-" }}</td>
+            <td>{{ item.descripcion || "-" }}</td>
+            <td>{{ Number(item.stock || 0) }}</td>
+            <td>{{ formatMoney(item.costo) }}</td>
             <td>
               <span class="status-badge" :data-status="Number(item.activo)">
                 {{ Number(item.activo) === 1 ? "Activo" : "Inactivo" }}

@@ -16,15 +16,10 @@ export function useInventario() {
 
   const getInitialForm = () => ({
     id: null,
-    codigo: "",
     nombre: "",
-    categoria: "",
-    unidad: "",
-    stock_actual: 0,
-    stock_minimo: 0,
-    costo_unitario: 0,
-    precio_venta: 0,
-    ubicacion: "",
+    descripcion: "",
+    stock: 0,
+    costo: 0,
     activo: 1,
   });
 
@@ -55,10 +50,8 @@ export function useInventario() {
     try {
       const payload = {
         ...form.value,
-        stock_actual: Number(form.value.stock_actual || 0),
-        stock_minimo: Number(form.value.stock_minimo || 0),
-        costo_unitario: Number(form.value.costo_unitario || 0),
-        precio_venta: Number(form.value.precio_venta || 0),
+        stock: Number(form.value.stock || 0),
+        costo: Number(form.value.costo || 0),
         activo: Number(form.value.activo ? 1 : 0),
       };
 
@@ -80,15 +73,10 @@ export function useInventario() {
   const startEdit = (item) => {
     form.value = {
       id: item.id,
-      codigo: item.codigo || "",
       nombre: item.nombre || "",
-      categoria: item.categoria || "",
-      unidad: item.unidad || "",
-      stock_actual: Number(item.stock_actual || 0),
-      stock_minimo: Number(item.stock_minimo || 0),
-      costo_unitario: Number(item.costo_unitario || 0),
-      precio_venta: Number(item.precio_venta || 0),
-      ubicacion: item.ubicacion || "",
+      descripcion: item.descripcion || "",
+      stock: Number(item.stock || 0),
+      costo: Number(item.costo || 0),
       activo: Number(item.activo ?? 1),
     };
 
@@ -112,10 +100,8 @@ export function useInventario() {
     if (!texto) return inventario.value;
 
     return inventario.value.filter((item) =>
-      String(item.codigo || "").toLowerCase().includes(texto) ||
       String(item.nombre || "").toLowerCase().includes(texto) ||
-      String(item.categoria || "").toLowerCase().includes(texto) ||
-      String(item.ubicacion || "").toLowerCase().includes(texto)
+      String(item.descripcion || "").toLowerCase().includes(texto)
     );
   });
 

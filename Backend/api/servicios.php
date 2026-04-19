@@ -16,9 +16,7 @@ try {
         $stmt = $pdo->query("\n            SELECT
                 id,
                 nombre,
-                descripcion,
-                precio_base,
-                duracion_estimada_min,
+                precio,
                 activo,
                 created_at,
                 updated_at
@@ -42,11 +40,7 @@ try {
 
         if ($action === 'create') {
             $nombre = trim($data['nombre'] ?? '');
-            $descripcion = trim($data['descripcion'] ?? '');
-            $precio_base = isset($data['precio_base']) ? (float)$data['precio_base'] : 0;
-            $duracion = isset($data['duracion_estimada_min']) && $data['duracion_estimada_min'] !== ''
-                ? (int)$data['duracion_estimada_min']
-                : null;
+            $precio = isset($data['precio']) ? (float)$data['precio'] : 0;
             $activo = isset($data['activo']) ? (int)$data['activo'] : 1;
 
             if ($nombre === '') {
@@ -59,17 +53,11 @@ try {
             }
 
             $stmt = $pdo->prepare("\n                INSERT INTO servicios
-                (nombre, descripcion, precio_base, duracion_estimada_min, activo)
-                VALUES (?, ?, ?, ?, ?)
+                (nombre, precio, activo)
+                VALUES (?, ?, ?)
             ");
 
-            $stmt->execute([
-                $nombre,
-                $descripcion !== '' ? $descripcion : null,
-                $precio_base,
-                $duracion,
-                $activo
-            ]);
+            $stmt->execute([$nombre, $precio, $activo]);
 
             echo json_encode([
                 'success' => true,
@@ -82,11 +70,7 @@ try {
         if ($action === 'update') {
             $id = $data['id'] ?? null;
             $nombre = trim($data['nombre'] ?? '');
-            $descripcion = trim($data['descripcion'] ?? '');
-            $precio_base = isset($data['precio_base']) ? (float)$data['precio_base'] : 0;
-            $duracion = isset($data['duracion_estimada_min']) && $data['duracion_estimada_min'] !== ''
-                ? (int)$data['duracion_estimada_min']
-                : null;
+            $precio = isset($data['precio']) ? (float)$data['precio'] : 0;
             $activo = isset($data['activo']) ? (int)$data['activo'] : 1;
 
             if (!$id || $nombre === '') {
@@ -101,22 +85,13 @@ try {
             $stmt = $pdo->prepare("\n                UPDATE servicios
                 SET
                     nombre = ?,
-                    descripcion = ?,
-                    precio_base = ?,
-                    duracion_estimada_min = ?,
+                    precio = ?,
                     activo = ?,
                     updated_at = NOW()
                 WHERE id = ?
             ");
 
-            $stmt->execute([
-                $nombre,
-                $descripcion !== '' ? $descripcion : null,
-                $precio_base,
-                $duracion,
-                $activo,
-                $id
-            ]);
+            $stmt->execute([$nombre, $precio, $activo, $id]);
 
             echo json_encode([
                 'success' => true,
@@ -160,7 +135,6 @@ try {
         'success' => false,
         'message' => 'Método no permitido'
     ], JSON_UNESCAPED_UNICODE);
-
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([

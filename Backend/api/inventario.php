@@ -15,15 +15,10 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt = $pdo->query("\n            SELECT
                 id,
-                codigo,
                 nombre,
-                categoria,
-                unidad,
-                stock_actual,
-                stock_minimo,
-                costo_unitario,
-                precio_venta,
-                ubicacion,
+                descripcion,
+                stock,
+                costo,
                 activo,
                 created_at,
                 updated_at
@@ -46,16 +41,11 @@ try {
         $action = $data['action'] ?? '';
 
         if ($action === 'create') {
-            $codigo = trim($data['codigo'] ?? '');
             $nombre = trim($data['nombre'] ?? '');
-            $categoria = trim($data['categoria'] ?? '');
-            $unidad = trim($data['unidad'] ?? '');
-            $stock_actual = $data['stock_actual'] ?? 0;
-            $stock_minimo = $data['stock_minimo'] ?? 0;
-            $costo_unitario = $data['costo_unitario'] ?? 0;
-            $precio_venta = $data['precio_venta'] ?? 0;
-            $ubicacion = trim($data['ubicacion'] ?? '');
-            $activo = $data['activo'] ?? 1;
+            $descripcion = trim($data['descripcion'] ?? '');
+            $stock = isset($data['stock']) ? (int)$data['stock'] : 0;
+            $costo = isset($data['costo']) ? (float)$data['costo'] : 0;
+            $activo = isset($data['activo']) ? (int)$data['activo'] : 1;
 
             if ($nombre === '') {
                 http_response_code(400);
@@ -67,20 +57,15 @@ try {
             }
 
             $stmt = $pdo->prepare("\n                INSERT INTO inventario
-                (codigo, nombre, categoria, unidad, stock_actual, stock_minimo, costo_unitario, precio_venta, ubicacion, activo)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (nombre, descripcion, stock, costo, activo)
+                VALUES (?, ?, ?, ?, ?)
             ");
 
             $stmt->execute([
-                $codigo !== '' ? $codigo : null,
                 $nombre,
-                $categoria !== '' ? $categoria : null,
-                $unidad !== '' ? $unidad : null,
-                $stock_actual,
-                $stock_minimo,
-                $costo_unitario,
-                $precio_venta,
-                $ubicacion !== '' ? $ubicacion : null,
+                $descripcion !== '' ? $descripcion : null,
+                $stock,
+                $costo,
                 $activo
             ]);
 
@@ -94,16 +79,11 @@ try {
 
         if ($action === 'update') {
             $id = $data['id'] ?? null;
-            $codigo = trim($data['codigo'] ?? '');
             $nombre = trim($data['nombre'] ?? '');
-            $categoria = trim($data['categoria'] ?? '');
-            $unidad = trim($data['unidad'] ?? '');
-            $stock_actual = $data['stock_actual'] ?? 0;
-            $stock_minimo = $data['stock_minimo'] ?? 0;
-            $costo_unitario = $data['costo_unitario'] ?? 0;
-            $precio_venta = $data['precio_venta'] ?? 0;
-            $ubicacion = trim($data['ubicacion'] ?? '');
-            $activo = $data['activo'] ?? 1;
+            $descripcion = trim($data['descripcion'] ?? '');
+            $stock = isset($data['stock']) ? (int)$data['stock'] : 0;
+            $costo = isset($data['costo']) ? (float)$data['costo'] : 0;
+            $activo = isset($data['activo']) ? (int)$data['activo'] : 1;
 
             if (!$id || $nombre === '') {
                 http_response_code(400);
@@ -116,30 +96,20 @@ try {
 
             $stmt = $pdo->prepare("\n                UPDATE inventario
                 SET
-                    codigo = ?,
                     nombre = ?,
-                    categoria = ?,
-                    unidad = ?,
-                    stock_actual = ?,
-                    stock_minimo = ?,
-                    costo_unitario = ?,
-                    precio_venta = ?,
-                    ubicacion = ?,
+                    descripcion = ?,
+                    stock = ?,
+                    costo = ?,
                     activo = ?,
                     updated_at = NOW()
                 WHERE id = ?
             ");
 
             $stmt->execute([
-                $codigo !== '' ? $codigo : null,
                 $nombre,
-                $categoria !== '' ? $categoria : null,
-                $unidad !== '' ? $unidad : null,
-                $stock_actual,
-                $stock_minimo,
-                $costo_unitario,
-                $precio_venta,
-                $ubicacion !== '' ? $ubicacion : null,
+                $descripcion !== '' ? $descripcion : null,
+                $stock,
+                $costo,
                 $activo,
                 $id
             ]);
@@ -186,7 +156,6 @@ try {
         'success' => false,
         'message' => 'Método no permitido'
     ], JSON_UNESCAPED_UNICODE);
-
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
