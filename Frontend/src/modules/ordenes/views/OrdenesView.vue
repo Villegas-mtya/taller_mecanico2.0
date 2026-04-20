@@ -38,6 +38,7 @@ const nuevaOrden = () => {
   <section class="ordenes-view">
     <div class="page-header">
       <div>
+        <p class="eyebrow">Módulo</p>
         <h1>Órdenes</h1>
         <p>Administra las órdenes de servicio del taller.</p>
       </div>
@@ -106,6 +107,15 @@ const nuevaOrden = () => {
 .page-header p {
   margin: 6px 0 0;
   color: #64748b;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .toolbar {

@@ -1,29 +1,101 @@
 <script setup>
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+
 import Topbar from "@/components/layout/Topbar.vue";
 import PageContainer from "@/components/layout/PageContainer.vue";
 
-const cards = [
+import { getClientes } from "@/modules/clientes/services/clientes.service";
+import { getVehiculos } from "@/modules/vehiculos/services/vehiculos.service";
+import { getOrdenes } from "@/modules/ordenes/services/ordenes.service";
+import { get_citas } from "@/modules/citas/services/citas.service";
+
+const router = useRouter();
+
+const cargando = ref(false);
+
+const totales = ref({
+  clientes: 0,
+  vehiculos: 0,
+  ordenes: 0,
+  citas: 0,
+});
+
+const cards = computed(() => [
   {
     title: "Clientes",
-    value: "125",
+    value: totales.value.clientes,
     description: "Registros activos en la base de datos",
   },
   {
     title: "Vehículos",
-    value: "89",
+    value: totales.value.vehiculos,
     description: "Vehículos asociados a clientes",
   },
   {
     title: "Órdenes",
-    value: "34",
+    value: totales.value.ordenes,
     description: "Órdenes en proceso y finalizadas",
   },
   {
     title: "Citas",
-    value: "12",
-    description: "Citas programadas para hoy",
+    value: totales.value.citas,
+    description: "Citas registradas en el sistema",
+  },
+]);
+
+const accesosRapidos = [
+  {
+    label: "Crear cliente",
+    description: "Abrir módulo de clientes",
+    routeName: "clientes",
+  },
+  {
+    label: "Registrar vehículo",
+    description: "Abrir módulo de vehículos",
+    routeName: "vehiculos",
+  },
+  {
+    label: "Generar orden",
+    description: "Abrir módulo de órdenes",
+    routeName: "ordenes",
+  },
+  {
+    label: "Ver citas",
+    description: "Ir al panel de citas",
+    routeName: "citas",
   },
 ];
+
+const cargarResumen = async () => {
+  cargando.value = true;
+
+  try {
+    const [clientes, vehiculos, ordenes, citas] = await Promise.all([
+      getClientes(),
+      getVehiculos(),
+      getOrdenes(),
+      get_citas(),
+    ]);
+
+    totales.value = {
+      clientes: Array.isArray(clientes) ? clientes.length : 0,
+      vehiculos: Array.isArray(vehiculos) ? vehiculos.length : 0,
+      ordenes: Array.isArray(ordenes) ? ordenes.length : 0,
+      citas: Array.isArray(citas) ? citas.length : 0,
+    };
+  } catch (error) {
+    console.error("No se pudo cargar el resumen del dashboard:", error);
+  } finally {
+    cargando.value = false;
+  }
+};
+
+const irA = (routeName) => {
+  router.push({ name: routeName });
+};
+
+onMounted(cargarResumen);
 </script>
 
 <template>
@@ -45,19 +117,26 @@ const cards = [
       <article class="dashboard-card">
         <h2>Actividad reciente</h2>
         <p>
-          Aquí podrás mostrar más adelante las últimas órdenes, clientes registrados
-          y movimientos importantes del sistema.
+          {{ cargando
+            ? "Cargando indicadores del taller..."
+            : "Resumen actualizado con la información real registrada en el sistema." }}
         </p>
       </article>
 
       <article class="dashboard-card">
         <h2>Accesos rápidos</h2>
-        <ul class="quick-list">
-          <li>Crear cliente</li>
-          <li>Registrar vehículo</li>
-          <li>Generar orden</li>
-          <li>Ver citas del día</li>
-        </ul>
+        <div class="quick-actions">
+          <button
+            v-for="acceso in accesosRapidos"
+            :key="acceso.routeName"
+            type="button"
+            class="quick-action"
+            @click="irA(acceso.routeName)"
+          >
+            <strong>{{ acceso.label }}</strong>
+            <span>{{ acceso.description }}</span>
+          </button>
+        </div>
       </article>
     </section>
   </PageContainer>
@@ -114,12 +193,33 @@ const cards = [
   color: var(--color-text-muted);
 }
 
-.quick-list {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--color-text-muted);
+.quick-actions {
   display: grid;
   gap: 10px;
+}
+
+.quick-action {
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+
+.quick-action strong {
+  color: var(--color-text);
+}
+
+.quick-action span {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.quick-action:hover {
+  border-color: var(--color-primary);
 }
 
 @media (max-width: 1100px) {

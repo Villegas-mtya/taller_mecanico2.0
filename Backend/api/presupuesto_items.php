@@ -12,6 +12,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../config/db.php';
 
 try {
+    /**
+     * Normaliza el tipo de item para evitar comparaciones frágiles.
+     * Acepta variaciones comunes enviadas por frontend.
+     */
+    $normalizarTipoItem = static function ($tipoRaw) {
+        $tipo = mb_strtolower(trim((string) $tipoRaw), 'UTF-8');
+
+        if (in_array($tipo, ['inventario', 'pieza', 'refaccion', 'refacción'], true)) {
+            return 'inventario';
+        }
+
+        if (in_array($tipo, ['servicio', 'mano_obra', 'mano de obra'], true)) {
+            return 'servicio';
+        }
+
+        return $tipo;
+    };
+
+    /**
+     * Resuelve el precio unitario base según catálogo:
+     * - inventario => costo directo (regla de negocio solicitada)
+     * - servicio   => precio del servicio
+     *
+     * Retorna null cuando no aplica o no se puede resolver.
+     */
+    $resolverPrecioDesdeCatalogo = static function ($pdo, $tipoItem, $piezaServicioId) {
+        if (!$piezaServicioId) {
+            return null;
+        }
+
+        if ($tipoItem === 'inventario') {
+            $stmt = $pdo->prepare("SELECT costo FROM inventario WHERE id = ? LIMIT 1");
+            $stmt->execute([$piezaServicioId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ? (float) $row['costo'] : null;
+        }
+
+        if ($tipoItem === 'servicio') {
+            $stmt = $pdo->prepare("SELECT precio FROM servicios WHERE id = ? LIMIT 1");
+            $stmt->execute([$piezaServicioId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ? (float) $row['precio'] : null;
+        }
+
+        return null;
+    };
+
 
     // GET: listar items de presupuesto
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -49,7 +98,7 @@ try {
 
         if ($action === 'create') {
             $cita_id = $data['cita_id'] ?? null;
-            $tipo_item = trim($data['tipo_item'] ?? '');
+            $tipo_item = $normalizarTipoItem($data['tipo_item'] ?? '');
             $pieza_servicio_id = $data['pieza_servicio_id'] ?? null;
             $descripcion = trim($data['descripcion'] ?? '');
             $cantidad = $data['cantidad'] ?? 1;
@@ -63,6 +112,13 @@ try {
                     "message" => "cita_id, tipo_item y descripcion son obligatorios"
                 ], JSON_UNESCAPED_UNICODE);
                 exit;
+            }
+
+            // Regla solicitada: inventario usa costo directo.
+            // Si viene id de catálogo, priorizamos precio resuelto desde DB.
+            $precioCatalogo = $resolverPrecioDesdeCatalogo($pdo, $tipo_item, $pieza_servicio_id);
+            if ($precioCatalogo !== null) {
+                $precio_unitario = $precioCatalogo;
             }
 
             if ($importe === null || $importe === '') {
@@ -96,7 +152,7 @@ try {
         if ($action === 'update') {
             $id = $data['id'] ?? null;
             $cita_id = $data['cita_id'] ?? null;
-            $tipo_item = trim($data['tipo_item'] ?? '');
+            $tipo_item = $normalizarTipoItem($data['tipo_item'] ?? '');
             $pieza_servicio_id = $data['pieza_servicio_id'] ?? null;
             $descripcion = trim($data['descripcion'] ?? '');
             $cantidad = $data['cantidad'] ?? 1;
@@ -110,6 +166,12 @@ try {
                     "message" => "id, cita_id, tipo_item y descripcion son obligatorios"
                 ], JSON_UNESCAPED_UNICODE);
                 exit;
+            }
+
+            // Mantener consistencia del presupuesto con catálogo en edición.
+            $precioCatalogo = $resolverPrecioDesdeCatalogo($pdo, $tipo_item, $pieza_servicio_id);
+            if ($precioCatalogo !== null) {
+                $precio_unitario = $precioCatalogo;
             }
 
             if ($importe === null || $importe === '') {

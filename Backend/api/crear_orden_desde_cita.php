@@ -84,7 +84,28 @@ try {
         exit;
     }
 
-    // 3. Obtener total del presupuesto
+    // 3. Validar que la cita tenga conceptos de presupuesto
+    $stmtConteoItems = $pdo->prepare("
+        SELECT COUNT(*) AS total_items
+        FROM presupuesto_items
+        WHERE cita_id = ?
+    ");
+    $stmtConteoItems->execute([$cita_id]);
+    $conteoItems = $stmtConteoItems->fetch(PDO::FETCH_ASSOC);
+    $totalItems = (int)($conteoItems['total_items'] ?? 0);
+
+    if ($totalItems === 0) {
+        $pdo->rollBack();
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "No se puede generar la orden porque la cita no tiene conceptos de presupuesto",
+            "error_code" => "PRESUPUESTO_VACIO"
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // 4. Obtener total del presupuesto (solo si hay conceptos)
     $stmtTotal = $pdo->prepare("
         SELECT COALESCE(SUM(importe), 0) AS total
         FROM presupuesto_items
@@ -92,9 +113,9 @@ try {
     ");
     $stmtTotal->execute([$cita_id]);
     $totalData = $stmtTotal->fetch(PDO::FETCH_ASSOC);
-    $total = $totalData['total'] ?? 0;
+    $total = (float)($totalData['total'] ?? 0);
 
-    // 4. Crear descripción automática si no se envía una
+    // 5. Crear descripción automática si no se envía una
     if ($descripcion === '') {
         $partes = [];
 
@@ -113,7 +134,7 @@ try {
         }
     }
 
-    // 5. Insertar orden
+    // 6. Insertar orden
     $stmtInsert = $pdo->prepare("
         INSERT INTO ordenes (
             cliente_id,
@@ -136,7 +157,7 @@ try {
 
     $orden_id = $pdo->lastInsertId();
 
-    // 6. Opcional: actualizar estado de la cita
+    // 7. Actualizar estado de la cita
     $stmtUpdateCita = $pdo->prepare("
         UPDATE citas
         SET estado = 'Convertida en orden', updated_at = NOW()
