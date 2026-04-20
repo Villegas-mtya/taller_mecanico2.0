@@ -8,12 +8,23 @@ const router = useRouter();
 
 const cargando = ref(false);
 const generandoOrden = ref(false);
+const guardandoConcepto = ref(false);
+const eliminandoConceptoId = ref(null);
 const error = ref("");
 
 const cita = ref(null);
 const presupuestoItems = ref([]);
 const totalPresupuesto = ref(0);
 const ordenRelacionada = ref(null);
+const mostrarFormularioConcepto = ref(false);
+const editandoConceptoId = ref(null);
+
+const formularioConcepto = ref({
+  tipo_item: "servicio",
+  descripcion: "",
+  cantidad: 1,
+  precio_unitario: 0,
+});
 
 const citaId = computed(() => route.params.id);
 
@@ -67,6 +78,126 @@ const generarOrden = async () => {
     }
   } finally {
     generandoOrden.value = false;
+  }
+};
+
+const resetFormularioConcepto = () => {
+  formularioConcepto.value = {
+    tipo_item: "servicio",
+    descripcion: "",
+    cantidad: 1,
+    precio_unitario: 0,
+  };
+  editandoConceptoId.value = null;
+  mostrarFormularioConcepto.value = false;
+};
+
+const validarFormularioConcepto = () => {
+  const descripcion = formularioConcepto.value.descripcion.trim();
+  const cantidad = Number(formularioConcepto.value.cantidad);
+  const precioUnitario = Number(formularioConcepto.value.precio_unitario);
+
+  if (!descripcion) {
+    return "La descripción del concepto es obligatoria.";
+  }
+
+  if (!Number.isFinite(cantidad) || cantidad <= 0) {
+    return "La cantidad debe ser mayor que 0.";
+  }
+
+  if (!Number.isFinite(precioUnitario) || precioUnitario < 0) {
+    return "El precio unitario no puede ser negativo.";
+  }
+
+  return "";
+};
+
+const iniciarNuevoConcepto = () => {
+  error.value = "";
+  mostrarFormularioConcepto.value = true;
+  editandoConceptoId.value = null;
+  formularioConcepto.value = {
+    tipo_item: "servicio",
+    descripcion: "",
+    cantidad: 1,
+    precio_unitario: 0,
+  };
+};
+
+const iniciarEdicionConcepto = (item) => {
+  error.value = "";
+  mostrarFormularioConcepto.value = true;
+  editandoConceptoId.value = item.id;
+  formularioConcepto.value = {
+    tipo_item: item.tipo_item || "servicio",
+    descripcion: item.descripcion || "",
+    cantidad: Number(item.cantidad || 1),
+    precio_unitario: Number(item.precio_unitario || 0),
+  };
+};
+
+const guardarConcepto = async () => {
+  if (!cita.value) return;
+
+  const errorValidacion = validarFormularioConcepto();
+  if (errorValidacion) {
+    error.value = errorValidacion;
+    return;
+  }
+
+  guardandoConcepto.value = true;
+  error.value = "";
+
+  try {
+    const payloadBase = {
+      cita_id: cita.value.id,
+      tipo_item: formularioConcepto.value.tipo_item,
+      descripcion: formularioConcepto.value.descripcion.trim(),
+      cantidad: Number(formularioConcepto.value.cantidad),
+      precio_unitario: Number(formularioConcepto.value.precio_unitario),
+    };
+
+    if (editandoConceptoId.value) {
+      await api.post("/presupuesto_items.php", {
+        action: "update",
+        id: editandoConceptoId.value,
+        ...payloadBase,
+      });
+    } else {
+      await api.post("/presupuesto_items.php", {
+        action: "create",
+        ...payloadBase,
+      });
+    }
+
+    resetFormularioConcepto();
+    await cargarDetalle();
+  } catch (err) {
+    error.value =
+      err?.response?.data?.message || err.message || "Error al guardar el concepto";
+  } finally {
+    guardandoConcepto.value = false;
+  }
+};
+
+const eliminarConcepto = async (item) => {
+  if (!item?.id) return;
+  if (!confirm("¿Eliminar este concepto del presupuesto?")) return;
+
+  eliminandoConceptoId.value = item.id;
+  error.value = "";
+
+  try {
+    await api.post("/presupuesto_items.php", {
+      action: "delete",
+      id: item.id,
+    });
+    await cargarDetalle();
+  } catch (err) {
+    error.value =
+      err?.response?.data?.message || err.message || "Error al eliminar el concepto";
+  } finally {
+    eliminandoConceptoId.value = null;
   }
 };
 
@@ -166,8 +297,88 @@ onMounted(cargarDetalle);
       <section class="card presupuesto-card">
         <div class="presupuesto-head">
           <h2>Presupuesto asociado</h2>
-          <span class="total-pill">Total: {{ moneda(totalPresupuesto) }}</span>
+          <div class="presupuesto-head-actions">
+            <span class="total-pill">Total: {{ moneda(totalPresupuesto) }}</span>
+            <button
+              v-if="!ordenRelacionada"
+              type="button"
+              class="btn btn-secondary"
+              @click="iniciarNuevoConcepto"
+            >
+              Agregar concepto
+            </button>
+          </div>
         </div>
+
+        <form
+          v-if="mostrarFormularioConcepto && !ordenRelacionada"
+          class="concept-form"
+          @submit.prevent="guardarConcepto"
+        >
+          <div class="concept-grid">
+            <div class="field">
+              <label for="tipo_item">Tipo</label>
+              <select
+                id="tipo_item"
+                v-model="formularioConcepto.tipo_item"
+                class="input"
+              >
+                <option value="servicio">Servicio</option>
+                <option value="inventario">Inventario</option>
+              </select>
+            </div>
+
+            <div class="field field-grow">
+              <label for="descripcion">Descripción</label>
+              <input
+                id="descripcion"
+                v-model="formularioConcepto.descripcion"
+                type="text"
+                class="input"
+                placeholder="Describe el concepto"
+              />
+            </div>
+
+            <div class="field">
+              <label for="cantidad">Cantidad</label>
+              <input
+                id="cantidad"
+                v-model.number="formularioConcepto.cantidad"
+                type="number"
+                min="1"
+                step="1"
+                class="input"
+              />
+            </div>
+
+            <div class="field">
+              <label for="precio_unitario">P. unitario</label>
+              <input
+                id="precio_unitario"
+                v-model.number="formularioConcepto.precio_unitario"
+                type="number"
+                min="0"
+                step="0.01"
+                class="input"
+              />
+            </div>
+          </div>
+
+          <div class="concept-actions">
+            <button type="submit" class="btn btn-primary" :disabled="guardandoConcepto">
+              {{
+                guardandoConcepto
+                  ? "Guardando..."
+                  : editandoConceptoId
+                    ? "Actualizar concepto"
+                    : "Guardar concepto"
+              }}
+            </button>
+            <button type="button" class="btn btn-ghost" @click="resetFormularioConcepto">
+              Cancelar
+            </button>
+          </div>
+        </form>
 
         <div v-if="presupuestoItems.length === 0" class="empty-state">
           <h3>Sin conceptos</h3>
@@ -178,18 +389,36 @@ onMounted(cargarDetalle);
           <table class="presupuesto-table">
             <thead>
               <tr>
+                <th>Tipo</th>
                 <th>Descripción</th>
                 <th>Cantidad</th>
                 <th>P. Unitario</th>
                 <th>Importe</th>
+                <th v-if="!ordenRelacionada">Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in presupuestoItems" :key="item.id">
+                <td>{{ item.tipo_item || "-" }}</td>
                 <td>{{ item.descripcion || "-" }}</td>
                 <td>{{ Number(item.cantidad || 0) }}</td>
                 <td>{{ moneda(item.precio_unitario) }}</td>
                 <td>{{ moneda(item.importe) }}</td>
+                <td v-if="!ordenRelacionada">
+                  <div class="table-actions">
+                    <button type="button" class="btn btn-ghost btn-table" @click="iniciarEdicionConcepto(item)">
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-table"
+                      :disabled="eliminandoConceptoId === item.id"
+                      @click="eliminarConcepto(item)"
+                    >
+                      {{ eliminandoConceptoId === item.id ? "Eliminando..." : "Eliminar" }}
+                    </button>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -297,6 +526,13 @@ onMounted(cargarDetalle);
   gap: 10px;
 }
 
+.presupuesto-head-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .total-pill {
   background: #eef2ff;
   color: #3730a3;
@@ -308,6 +544,49 @@ onMounted(cargarDetalle);
 .table-wrapper {
   margin-top: 14px;
   overflow-x: auto;
+}
+
+.concept-form {
+  margin-top: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.concept-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr 130px 140px;
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.field-grow {
+  min-width: 220px;
+}
+
+.input {
+  min-height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+.concept-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
 }
 
 .presupuesto-table {
@@ -406,6 +685,23 @@ onMounted(cargarDetalle);
   border-color: #cbd5e1;
 }
 
+.btn-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.btn-table {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.table-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .empty-state {
   margin-top: 12px;
   color: #64748b;
@@ -423,6 +719,10 @@ onMounted(cargarDetalle);
 @media (max-width: 900px) {
   .meta-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .concept-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
