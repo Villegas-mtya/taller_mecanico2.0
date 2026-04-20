@@ -47,41 +47,17 @@ const updateField = (field, value) => {
         />
       </div>
 
-      <div class="field">
-        <label for="descripcion">Descripción</label>
-        <textarea
-          id="descripcion"
-          class="input textarea"
-          :value="modelValue.descripcion"
-          @input="updateField('descripcion', $event.target.value)"
-          placeholder="Describe el alcance del servicio"
-        />
-      </div>
-
       <div class="form-grid">
         <div class="field">
-          <label for="precio_base">Precio base</label>
+          <label for="precio">Precio</label>
           <input
-            id="precio_base"
+            id="precio"
             type="number"
             min="0"
             step="0.01"
             class="input"
-            :value="modelValue.precio_base"
-            @input="updateField('precio_base', $event.target.value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="duracion_estimada_min">Duración estimada (min)</label>
-          <input
-            id="duracion_estimada_min"
-            type="number"
-            min="0"
-            step="1"
-            class="input"
-            :value="modelValue.duracion_estimada_min"
-            @input="updateField('duracion_estimada_min', $event.target.value)"
+            :value="modelValue.precio"
+            @input="updateField('precio', $event.target.value)"
           />
         </div>
 
@@ -144,7 +120,7 @@ const updateField = (field, value) => {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
@@ -173,11 +149,6 @@ const updateField = (field, value) => {
 .input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 4px var(--color-focus-ring);
-}
-
-.textarea {
-  min-height: 110px;
-  resize: vertical;
 }
 
 .checkbox-field {

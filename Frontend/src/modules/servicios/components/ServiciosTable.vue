@@ -26,7 +26,7 @@ const formatMoney = (value) => {
     <div class="section-head">
       <div>
         <h2>Listado de servicios</h2>
-        <p>Consulta los servicios activos y sus precios base.</p>
+        <p>Consulta los servicios activos y sus precios.</p>
       </div>
 
       <span class="results-badge">
@@ -51,10 +51,9 @@ const formatMoney = (value) => {
       <table class="servicios-table">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Precio base</th>
-            <th>Duración</th>
+            <th>Precio</th>
             <th>Estado</th>
             <th class="th-actions">Acciones</th>
           </tr>
@@ -62,12 +61,9 @@ const formatMoney = (value) => {
 
         <tbody>
           <tr v-for="servicio in servicios" :key="servicio.id">
+            <td>{{ servicio.id }}</td>
             <td>{{ servicio.nombre || "-" }}</td>
-            <td>{{ servicio.descripcion || "-" }}</td>
-            <td>{{ formatMoney(servicio.precio_base) }}</td>
-            <td>
-              {{ servicio.duracion_estimada_min ? `${servicio.duracion_estimada_min} min` : "-" }}
-            </td>
+            <td>{{ formatMoney(servicio.precio) }}</td>
             <td>
               <span class="status-badge" :data-status="Number(servicio.activo)">
                 {{ Number(servicio.activo) === 1 ? "Activo" : "Inactivo" }}

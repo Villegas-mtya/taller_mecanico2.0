@@ -17,9 +17,7 @@ export function useServicios() {
   const getInitialForm = () => ({
     id: null,
     nombre: "",
-    descripcion: "",
-    precio_base: 0,
-    duracion_estimada_min: "",
+    precio: 0,
     activo: 1,
   });
 
@@ -33,7 +31,6 @@ export function useServicios() {
 
   const fetchServicios = async () => {
     cargando.value = true;
-
     try {
       servicios.value = await getServicios();
     } catch (error) {
@@ -48,15 +45,10 @@ export function useServicios() {
     if (!form.value.nombre.trim()) return;
 
     guardando.value = true;
-
     try {
       const payload = {
         ...form.value,
-        precio_base: Number(form.value.precio_base || 0),
-        duracion_estimada_min:
-          form.value.duracion_estimada_min === ""
-            ? null
-            : Number(form.value.duracion_estimada_min),
+        precio: Number(form.value.precio || 0),
         activo: Number(form.value.activo ? 1 : 0),
       };
 
@@ -79,10 +71,7 @@ export function useServicios() {
     form.value = {
       id: servicio.id,
       nombre: servicio.nombre || "",
-      descripcion: servicio.descripcion || "",
-      precio_base: Number(servicio.precio_base || 0),
-      duracion_estimada_min:
-        servicio.duracion_estimada_min ?? servicio.duracionestimadamin ?? "",
+      precio: Number(servicio.precio || 0),
       activo: Number(servicio.activo ?? 1),
     };
 
@@ -106,8 +95,7 @@ export function useServicios() {
     if (!texto) return servicios.value;
 
     return servicios.value.filter((s) =>
-      String(s.nombre || "").toLowerCase().includes(texto) ||
-      String(s.descripcion || "").toLowerCase().includes(texto)
+      String(s.nombre || "").toLowerCase().includes(texto)
     );
   });
 
