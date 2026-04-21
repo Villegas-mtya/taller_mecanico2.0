@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.backend.image }}
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_HOST
+              value: {{ .Values.backend.dbHost | quote }}
+            - name: DB_PORT
+              value: {{ .Values.backend.dbPort | quote }}
+            - name: DB_NAME
+              value: {{ .Values.backend.dbName | quote }}
+            - name: DB_USER
+              value: {{ .Values.backend.dbUser | quote }}
+            - name: DB_PASS
+              value: {{ .Values.backend.dbPass | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  type: {{ .Values.backend.serviceType }}
+  selector:
+    app: backend
+  ports:
+    - port: {{ .Values.backend.servicePort }}
+      targetPort: 80
