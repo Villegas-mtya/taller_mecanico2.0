@@ -1,10 +1,14 @@
 <?php
 
-$host = "127.0.0.1";
-$port = "3307"; // tu puerto
-$db   = "taller_db";
-$user = "root";
-$pass = ""; // en XAMPP normalmente está vacío
+$host = getenv('DB_HOST') ?: '127.0.0.1';
+$port = getenv('DB_PORT') ?: '3307';
+$db   = getenv('DB_NAME') ?: 'taller_db';
+$user = getenv('DB_USER') ?: 'root';
+
+$pass = getenv('DB_PASS');
+if ($pass === false) {
+    $pass = '';
+}
 
 try {
     $pdo = new PDO(
