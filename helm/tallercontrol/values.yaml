@@ -1,0 +1,19 @@
+mysql:
+  image: mysql:8.0
+  database: taller_db
+
+backend:
+  image: tallercontrol-backend:latest
+  serviceType: ClusterIP
+  servicePort: 80
+  dbHost: mysql
+  dbPort: "3306"
+  dbName: taller_db
+  dbUser: root
+  dbPass: ""
+
+frontend:
+  image: tallercontrol-frontend:latest
+  serviceType: NodePort
+  servicePort: 5173
+  nodePort: 30073
