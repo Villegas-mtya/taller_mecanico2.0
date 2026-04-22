@@ -1,4 +1,5 @@
 <script setup>
+//Hola
 defineProps({
   items: {
     type: Array,
