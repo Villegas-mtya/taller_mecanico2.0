@@ -1,5 +1,5 @@
 <script setup>
-//Hola
+//Hola - Muestra en Clase
 defineProps({
   items: {
     type: Array,
