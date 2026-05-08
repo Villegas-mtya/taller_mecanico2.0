@@ -6,12 +6,16 @@ import {
   deleteOrden,
   getClientesOptions,
   getVehiculosOptions,
+  getInventarioOptions,
+  getServiciosOptions,
 } from "../services/ordenes.service";
 
 export default function useOrdenes() {
   const ordenes = ref([])
   const clientes = ref([])
   const vehiculos = ref([])
+  const inventario = ref([])
+  const servicios = ref([])
   const cargando = ref(false)
   const guardando = ref(false)
   const editando = ref(false)
@@ -25,6 +29,9 @@ export default function useOrdenes() {
     descripcion: '',
     estado: 'Pendiente',
     total: 0,
+    inventarioItems: [],
+    serviciosItems: [],
+    cotizacionActiva: false,
   })
 
   const form = ref(getInitialForm())
@@ -66,12 +73,49 @@ export default function useOrdenes() {
     }
   }
 
+  const fetchInventario = async () => {
+    try {
+      inventario.value = await getInventarioOptions()
+    } catch (error) {
+      console.error('Error al obtener inventario:', error)
+      inventario.value = []
+    }
+  }
+
+  const fetchServicios = async () => {
+    try {
+      servicios.value = await getServiciosOptions()
+    } catch (error) {
+      console.error('Error al obtener servicios:', error)
+      servicios.value = []
+    }
+  }
+
   const fetchInitialData = async () => {
     await Promise.all([
       fetchOrdenes(),
       fetchClientes(),
       fetchVehiculos(),
+      fetchInventario(),
+      fetchServicios(),
     ])
+  }
+
+  // Calcula subtotales de forma defensiva para evitar NaN cuando falten cantidades o precios.
+  const calculateItemsTotal = (items = []) => items.reduce((total, item) => {
+    const cantidad = Number(item.cantidad || 0)
+    const precio = Number(item.precio || 0)
+    return total + cantidad * precio
+  }, 0)
+
+  const calculateOrdenTotal = () => {
+    const inventarioTotal = calculateItemsTotal(form.value.inventarioItems)
+    const serviciosTotal = calculateItemsTotal(form.value.serviciosItems)
+    const totalSeleccionado = inventarioTotal + serviciosTotal
+
+    const totalFinal = form.value.cotizacionActiva ? totalSeleccionado : totalSeleccionado || form.value.total || 0
+
+    return Math.round((Number(totalFinal) + Number.EPSILON) * 100) / 100
   }
 
   const submitOrden = async () => {
@@ -83,7 +127,7 @@ export default function useOrdenes() {
     try {
       const payload = {
         ...form.value,
-        total: Number(form.value.total || 0),
+        total: calculateOrdenTotal(),
       }
 
       if (editando.value) {
@@ -109,6 +153,9 @@ export default function useOrdenes() {
       descripcion: orden.descripcion ?? '',
       estado: orden.estado ?? 'Pendiente',
       total: Number(orden.total ?? 0),
+      inventarioItems: [],
+      serviciosItems: [],
+      cotizacionActiva: false,
     }
 
     editando.value = true
@@ -142,6 +189,8 @@ export default function useOrdenes() {
     ordenes,
     clientes,
     vehiculos,
+    inventario,
+    servicios,
     cargando,
     guardando,
     editando,

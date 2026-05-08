@@ -40,3 +40,13 @@ export async function getVehiculosOptions() {
   const { data } = await api.get('/vehiculos.php')
   return Array.isArray(data) ? data : []
 }
+
+export async function getInventarioOptions() {
+  const { data } = await api.get('/inventario.php')
+  return Array.isArray(data) ? data : []
+}
+
+export async function getServiciosOptions() {
+  const { data } = await api.get('/servicios.php')
+  return Array.isArray(data) ? data : []
+}

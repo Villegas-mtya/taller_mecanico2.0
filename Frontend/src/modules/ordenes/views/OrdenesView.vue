@@ -10,6 +10,8 @@ const {
   ordenes,
   clientes,
   vehiculos,
+  inventario,
+  servicios,
   cargando,
   guardando,
   editando,
@@ -67,6 +69,8 @@ const nuevaOrden = () => {
       v-model="form"
       :clientes="clientes"
       :vehiculos="vehiculos"
+      :inventario="inventario"
+      :servicios="servicios"
       :editando="editando"
       :guardando="guardando"
       @submit="submitOrden"
